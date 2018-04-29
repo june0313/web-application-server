@@ -1,17 +1,18 @@
 package webserver;
 
+import com.google.common.base.Strings;
+import com.google.common.collect.Maps;
 import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.HttpRequestUtils;
+import util.IOUtils;
 
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -36,32 +37,62 @@ public class RequestHandler extends Thread {
                 return;
             }
 
-            RequestLine requestLine = RequestLine.of(line);
-
-            while(!"".equals(line)) {
-                line = bufferedReader.readLine();
-                log.debug(line);
-            }
-
-            String resource = requestLine.getRequestResource();
-            log.debug("requested resource : " + resource);
-
-            String requestParam = requestLine.getRequestParam();
-
-            Map<String, String> parameterMap = HttpRequestUtils.parseQueryString(requestParam);
+            final RequestLine requestLine = RequestLine.of(line);
+            final Map<String, String> requestHeader = buildRequestHeader(bufferedReader, line);
+            final Map<String, String> requestParam = buildRequestParam(requestLine);
+            final String requestBody = getRequestBody(bufferedReader, requestHeader);
 
             if (requestLine.getRequestUri().startsWith("/user/create")) {
-                User user = new User(parameterMap.get("userId"), parameterMap.get("password"), parameterMap.get("name"), parameterMap.get("email"));
-                users.add(user);
+                Map<String, String> requestBodyMap = HttpRequestUtils.parseQueryString(requestBody);
+                final String userId = requestBodyMap.get("userId");
+                final String password = requestBodyMap.get("password");
+                final String name = requestBodyMap.get("name");
+                final String email = requestBodyMap.get("email");
+
+               if (!Strings.isNullOrEmpty(userId) &&  !Strings.isNullOrEmpty(password) && !Strings.isNullOrEmpty(name) && !Strings.isNullOrEmpty(email)) {
+                    User user = new User(userId, password, name, email);
+                    users.add(user);
+                }
             }
 
             DataOutputStream dos = new DataOutputStream(out);
-            byte[] body = Files.readAllBytes(new File("./webapp" + resource).toPath());
+            byte[] body = Files.readAllBytes(new File("./webapp" + requestLine.getRequestResource()).toPath());
             response200Header(dos, body.length);
             responseBody(dos, body);
         } catch (IOException e) {
             log.error(e.getMessage());
         }
+    }
+
+    private String getRequestBody(BufferedReader bufferedReader, Map<String, String> requestHeader) {
+        return Optional.ofNullable(requestHeader.get("Content-Length"))
+                .filter(contentLength -> !Strings.isNullOrEmpty(contentLength))
+                .map(contentLength -> {
+                    try {
+                        return IOUtils.readData(bufferedReader, Integer.parseInt(contentLength));
+                    } catch (IOException e) {
+                        return null;
+                    }
+                })
+                .orElse("");
+    }
+
+    private Map<String, String> buildRequestParam(RequestLine requestLine) {
+        return HttpRequestUtils.parseQueryString(requestLine.getRequestParam());
+    }
+
+    private Map<String, String> buildRequestHeader(BufferedReader bufferedReader, String line) throws IOException {
+        final Map<String, String> requestHeader = Maps.newHashMap();
+
+        while (!"".equals(line)) {
+            line = bufferedReader.readLine();
+
+            Optional.ofNullable(HttpRequestUtils.parseHeader(line))
+                    .ifPresent(header -> requestHeader.put(header.getKey(), header.getValue()));
+
+            log.debug(line);
+        }
+        return requestHeader;
     }
 
     private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
