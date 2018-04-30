@@ -31,6 +31,8 @@ public class RequestHandler extends Thread {
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(in, Charset.forName("UTF-8")));
+            DataOutputStream dos = new DataOutputStream(out);
+
             String line = bufferedReader.readLine();
 
             if (line == null) {
@@ -49,16 +51,16 @@ public class RequestHandler extends Thread {
                 final String name = requestBodyMap.get("name");
                 final String email = requestBodyMap.get("email");
 
-               if (!Strings.isNullOrEmpty(userId) &&  !Strings.isNullOrEmpty(password) && !Strings.isNullOrEmpty(name) && !Strings.isNullOrEmpty(email)) {
+                if (!Strings.isNullOrEmpty(userId) && !Strings.isNullOrEmpty(password) && !Strings.isNullOrEmpty(name) && !Strings.isNullOrEmpty(email)) {
                     User user = new User(userId, password, name, email);
                     users.add(user);
                 }
+                response302Header(dos, "/index.html");
+            } else {
+                byte[] body = Files.readAllBytes(new File("./webapp" + requestLine.getRequestResource()).toPath());
+                response200Header(dos, body.length);
+                responseBody(dos, body);
             }
-
-            DataOutputStream dos = new DataOutputStream(out);
-            byte[] body = Files.readAllBytes(new File("./webapp" + requestLine.getRequestResource()).toPath());
-            response200Header(dos, body.length);
-            responseBody(dos, body);
         } catch (IOException e) {
             log.error(e.getMessage());
         }
@@ -100,6 +102,16 @@ public class RequestHandler extends Thread {
             dos.writeBytes("HTTP/1.1 200 OK \r\n");
             dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
             dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
+            dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    private void response302Header(DataOutputStream dos, String location) {
+        try {
+            dos.writeBytes("HTTP/1.1 302 Found \r\n");
+            dos.writeBytes(String.format("Location: %s\r\n", location));
             dos.writeBytes("\r\n");
         } catch (IOException e) {
             log.error(e.getMessage());
