@@ -2,6 +2,7 @@ package webserver;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
+import db.DataBase;
 import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,8 +17,6 @@ import java.util.*;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
-    private static List<User> users = new ArrayList<>();
-
     private Socket connection;
 
     public RequestHandler(Socket connectionSocket) {
@@ -44,7 +43,7 @@ public class RequestHandler extends Thread {
             final Map<String, String> requestParam = buildRequestParam(requestLine);
             final String requestBody = getRequestBody(bufferedReader, requestHeader);
 
-            if (requestLine.getRequestUri().startsWith("/user/create")) {
+            if ("/user/create".equals(requestLine.getRequestUri())) {
                 Map<String, String> requestBodyMap = HttpRequestUtils.parseQueryString(requestBody);
                 final String userId = requestBodyMap.get("userId");
                 final String password = requestBodyMap.get("password");
@@ -53,9 +52,32 @@ public class RequestHandler extends Thread {
 
                 if (!Strings.isNullOrEmpty(userId) && !Strings.isNullOrEmpty(password) && !Strings.isNullOrEmpty(name) && !Strings.isNullOrEmpty(email)) {
                     User user = new User(userId, password, name, email);
-                    users.add(user);
+                    DataBase.addUser(user);
                 }
+
                 response302Header(dos, "/index.html");
+            } else if ("/user/login".equals(requestLine.getRequestUri())) {
+                Map<String, String> requestBodyMap = HttpRequestUtils.parseQueryString(requestBody);
+                final String userId = requestBodyMap.get("userId");
+                final String password = requestBodyMap.get("password");
+                final User user = DataBase.findUserById(userId);
+
+                final boolean loginSuccess = Optional.ofNullable(user)
+                        .map(User::getPassword)
+                        .map(p -> p.equals(password))
+                        .orElse(Boolean.FALSE);
+
+                if (loginSuccess) {
+                    log.debug("login success");
+                    final Cookie cookie = Cookie.create();
+                    cookie.addCookie("login", "true");
+                    response302Header(dos, "/index.html", cookie);
+                } else {
+                    log.debug("login failed");
+                    final Cookie cookie = Cookie.create();
+                    cookie.addCookie("login", "false");
+                    response302Header(dos, "/user/login_failed.html", cookie);
+                }
             } else {
                 byte[] body = Files.readAllBytes(new File("./webapp" + requestLine.getRequestResource()).toPath());
                 response200Header(dos, body.length);
@@ -112,6 +134,17 @@ public class RequestHandler extends Thread {
         try {
             dos.writeBytes("HTTP/1.1 302 Found \r\n");
             dos.writeBytes(String.format("Location: %s\r\n", location));
+            dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    private void response302Header(DataOutputStream dos, String location, Cookie cookie) {
+        try {
+            dos.writeBytes("HTTP/1.1 302 Found \r\n");
+            dos.writeBytes(String.format("Location: %s\r\n", location));
+            dos.writeBytes(cookie.getCookieResponseHeader());
             dos.writeBytes("\r\n");
         } catch (IOException e) {
             log.error(e.getMessage());
