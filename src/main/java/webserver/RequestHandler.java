@@ -14,6 +14,7 @@ import java.net.Socket;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -85,6 +86,14 @@ public class RequestHandler extends Thread {
 
                 if (isLoggedIn) {
                     log.debug("user is logged in");
+
+                    final String users = DataBase.findAll().stream()
+                            .map(User::getName)
+                            .map(name -> "<li>" + name + "</li>\n")
+                            .collect(Collectors.joining("", "<h2>User list</h2>\n<ul>", "</ul>"));
+
+                    response200Header(dos, users.length());
+                    responseBody(dos, users.getBytes());
                 } else {
                     log.debug("user is not logged in. redirect to index.html");
                     response302Header(dos, "/user/login.html");
