@@ -87,7 +87,7 @@ public class RequestHandler extends Thread {
                     log.debug("user is logged in");
                 } else {
                     log.debug("user is not logged in. redirect to index.html");
-                    response302Header(dos, "/index.html");
+                    response302Header(dos, "/user/login.html");
                 }
             } else {
                 byte[] body = Files.readAllBytes(new File("./webapp" + requestLine.getRequestResource()).toPath());
