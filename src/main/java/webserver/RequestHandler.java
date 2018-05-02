@@ -78,6 +78,17 @@ public class RequestHandler extends Thread {
                     cookie.addCookie("login", "false");
                     response302Header(dos, "/user/login_failed.html", cookie);
                 }
+            } else if ("/user/list".equals(requestLine.getRequestUri())) {
+                final String cookies = requestHeader.get("Cookie");
+                final Map<String, String> cookieMap = HttpRequestUtils.parseCookies(cookies);
+                final Boolean isLoggedIn = Optional.ofNullable(cookieMap.get("login")).map(Boolean::parseBoolean).orElse(Boolean.FALSE);
+
+                if (isLoggedIn) {
+                    log.debug("user is logged in");
+                } else {
+                    log.debug("user is not logged in. redirect to index.html");
+                    response302Header(dos, "/index.html");
+                }
             } else {
                 byte[] body = Files.readAllBytes(new File("./webapp" + requestLine.getRequestResource()).toPath());
                 response200Header(dos, body.length);
