@@ -100,7 +100,11 @@ public class RequestHandler extends Thread {
                 }
             } else {
                 byte[] body = Files.readAllBytes(new File("./webapp" + requestLine.getRequestResource()).toPath());
-                response200Header(dos, body.length);
+                if (requestHeader.get("Accept").contains("text/css")) {
+                    response200CssHeader(dos, body.length);
+                } else {
+                    response200Header(dos, body.length);
+                }
                 responseBody(dos, body);
             }
         } catch (IOException e) {
@@ -143,6 +147,17 @@ public class RequestHandler extends Thread {
         try {
             dos.writeBytes("HTTP/1.1 200 OK \r\n");
             dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
+            dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
+            dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    private void response200CssHeader(DataOutputStream dos, int lengthOfBodyContent) {
+        try {
+            dos.writeBytes("HTTP/1.1 200 OK \r\n");
+            dos.writeBytes("Content-Type: text/css;charset=utf-8\r\n");
             dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
             dos.writeBytes("\r\n");
         } catch (IOException e) {
