@@ -1,50 +1,47 @@
 package webserver;
 
+import com.google.common.base.Splitter;
 import util.HttpRequestUtils;
 
+import java.util.List;
 import java.util.Map;
 
 class RequestLine {
-    private RequestMethod requestMethod;
-    private String requestUri;
-    private String requestResource;
-    private String requestParam;
+    private RequestMethod method;
+    private String uri;
+    private String uriWithoutQueryString;
+    private String queryString;
     private Map<String, String> parameters;
 
     private RequestLine(String requestLine) {
-        this.requestMethod = RequestMethod.find(requestLine.split(" ")[0]);
-        this.requestUri = requestLine.split(" ")[1];
-        this.requestResource = this.requestUri.split("\\?")[0];
-        this.requestParam = extractParams();
-        this.parameters = HttpRequestUtils.parseQueryString(this.requestParam);
-    }
+        final List<String> requestLineTokens = Splitter.on(" ").splitToList(requestLine);
+        this.method = RequestMethod.find(requestLineTokens.get(0));
+        this.uri = requestLineTokens.get(1);
 
-    private String extractParams() {
-        if (hasParams()) {
-            return this.requestUri.split("\\?")[1];
-        }
-
-        return "";
-    }
-
-    private boolean hasParams() {
-        return this.requestUri.split("\\?").length > 1;
+        final List<String> uriTokens = Splitter.on("?").splitToList(requestLineTokens.get(1));
+        this.uriWithoutQueryString = uriTokens.get(0);
+        this.queryString = uriTokens.size() > 1 ? uriTokens.get(1) : "";
+        this.parameters = HttpRequestUtils.parseQueryString(this.queryString);
     }
 
     static RequestLine of(String requestLine) {
         return new RequestLine(requestLine);
     }
 
-    public String getRequestResource() {
-        return requestResource;
+    public String getUri() {
+        return this.uri;
     }
 
-    public String getRequestParam() {
-        return requestParam;
+    public String getUriWithoutQueryString() {
+        return this.uriWithoutQueryString;
     }
 
-    public RequestMethod getRequestMethod() {
-        return this.requestMethod;
+    public String getQueryString() {
+        return this.queryString;
+    }
+
+    public RequestMethod getMethod() {
+        return this.method;
     }
 
     public Map<String, String> getParameters() {
