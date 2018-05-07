@@ -2,4 +2,5 @@ GET /user/create?userId=june0313&password=1234&name=June HTTP/1.1
 Host: localhost:8080
 Connection: keep-alive
 Accept: */*
+Cookie: login=true; sessionId=1111
 

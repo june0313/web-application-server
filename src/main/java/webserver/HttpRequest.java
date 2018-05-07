@@ -18,6 +18,7 @@ public class HttpRequest {
     private RequestLine requestLine;
     private Map<String, String> headers;
     private Map<String, String> parameters;
+    private Map<String, String> cookies;
 
     public static HttpRequest of(InputStream inputStream) throws IOException {
         return new HttpRequest(inputStream);
@@ -27,7 +28,12 @@ public class HttpRequest {
         final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, Charsets.UTF_8));
         this.requestLine = RequestLine.of(bufferedReader.readLine());
         this.headers = buildRequestHeader(bufferedReader);
+        this.cookies = buildCookies();
         this.parameters = buildParameters(bufferedReader);
+    }
+
+    private Map<String, String> buildCookies() {
+        return HttpRequestUtils.parseCookies(getHeader("Cookie"));
     }
 
     private Map<String, String> buildParameters(BufferedReader reader) throws IOException {
@@ -67,5 +73,9 @@ public class HttpRequest {
 
     public String getParameter(String parameterName) {
         return this.parameters.get(parameterName);
+    }
+
+    public String getCookie(String cookieName) {
+        return this.cookies.get(cookieName);
     }
 }
