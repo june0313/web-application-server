@@ -54,11 +54,11 @@ public class HttpRequest {
     }
 
     public RequestMethod getMethod() {
-        return this.requestLine.getRequestMethod();
+        return this.requestLine.getMethod();
     }
 
     public String getPath() {
-        return this.requestLine.getRequestResource();
+        return this.requestLine.getUriWithoutQueryString();
     }
 
     public String getHeader(String headerName) {
