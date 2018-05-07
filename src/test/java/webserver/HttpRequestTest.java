@@ -21,6 +21,8 @@ public class HttpRequestTest {
         assertThat(request.getHeader("Connection")).isEqualTo("keep-alive");
         assertThat(request.getParameter("userId")).isEqualTo("june0313");
         assertThat(request.getParameter("password")).isEqualTo("1234");
+        assertThat(request.getCookie("login")).isEqualTo("true");
+        assertThat(request.getCookie("sessionId")).isEqualTo("1111");
     }
 
     @Test
@@ -35,5 +37,7 @@ public class HttpRequestTest {
         assertThat(request.getHeader("Content-Type")).isEqualTo("application/x-www-form-urlencoded");
         assertThat(request.getParameter("userId")).isEqualTo("june0313");
         assertThat(request.getParameter("password")).isEqualTo("1234");
+        assertThat(request.getCookie("login")).isEqualTo("true");
+        assertThat(request.getCookie("sessionId")).isEqualTo("1111");
     }
 }

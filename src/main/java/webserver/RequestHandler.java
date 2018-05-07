@@ -5,12 +5,10 @@ import db.DataBase;
 import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import util.HttpRequestUtils;
 
 import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -28,7 +26,6 @@ public class RequestHandler extends Thread {
 
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
-
             final HttpRequest httpRequest = HttpRequest.of(in);
             DataOutputStream dos = new DataOutputStream(out);
 
@@ -65,11 +62,7 @@ public class RequestHandler extends Thread {
                     response302Header(dos, "/user/login_failed.html", cookie);
                 }
             } else if ("/user/list".equals(httpRequest.getPath())) {
-                final String cookies = httpRequest.getHeader("Cookie");
-                final Map<String, String> cookieMap = HttpRequestUtils.parseCookies(cookies);
-                final Boolean isLoggedIn = Optional.ofNullable(cookieMap.get("login")).map(Boolean::parseBoolean).orElse(Boolean.FALSE);
-
-                if (isLoggedIn) {
+                if (isLogin(httpRequest)) {
                     log.debug("user is logged in");
 
                     final String users = DataBase.findAll().stream()
@@ -95,6 +88,12 @@ public class RequestHandler extends Thread {
         } catch (IOException e) {
             log.error(e.getMessage());
         }
+    }
+
+    private Boolean isLogin(HttpRequest httpRequest) {
+        return Optional.ofNullable(httpRequest.getCookie("login"))
+                .map(Boolean::parseBoolean)
+                .orElse(Boolean.FALSE);
     }
 
     private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
