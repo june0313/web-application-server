@@ -26,18 +26,18 @@ public class RequestHandler extends Thread {
             final HttpResponse httpResponse = HttpResponse.of(out, "./webapp");
 
             final Controller controller = RequestMapping.findController(httpRequest.getPath());
+
             if (controller == null) {
-                if (httpRequest.getHeader("Accept").contains("text/css")) {
-                    httpResponse.setContentType("text/css;charset=utf-8");
-                } else {
-                    httpResponse.setContentType("text/html;charset=utf-8");
-                }
-                httpResponse.forward(httpRequest.getPath());
+                httpResponse.forward(getDefaultPath(httpRequest.getPath()));
             } else {
                 controller.service(httpRequest, httpResponse);
             }
         } catch (IOException e) {
             log.error(e.getMessage());
         }
+    }
+
+    private String getDefaultPath(String path) {
+        return "/".equals(path) ? "/index.html" : path;
     }
 }
