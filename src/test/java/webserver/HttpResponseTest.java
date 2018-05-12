@@ -24,8 +24,9 @@ public class HttpResponseTest {
         final String[] results = out.toString().split("\r\n");
         assertThat(results[0]).isEqualTo("HTTP/1.1 200 OK ");
         assertThat(results[1]).isEqualTo("Content-Length: 13 ");
-        assertThat(results[2]).isEqualTo("");
-        assertThat(results[3]).isEqualTo("<h1>test</h1>");
+        assertThat(results[2]).isEqualTo("Content-Type: text/html;charset=utf-8 ");
+        assertThat(results[3]).isEqualTo("");
+        assertThat(results[4]).isEqualTo("<h1>test</h1>");
     }
 
     @Test

@@ -29,6 +29,14 @@ public class HttpResponse {
     }
 
     public void forward(String resource) {
+        if (resource.endsWith(".css")) {
+            setContentType("text/css");
+        } else if (resource.endsWith(".js")) {
+            setContentType("application/javascript");
+        } else {
+            setContentType("text/html;charset=utf-8");
+        }
+
         forwardBody(readFile(resource));
     }
 
