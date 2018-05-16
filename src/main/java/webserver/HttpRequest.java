@@ -4,6 +4,8 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
 import util.HttpRequestUtils;
 import util.IOUtils;
+import webserver.session.HttpSession;
+import webserver.session.HttpSessionRepository;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -77,5 +79,9 @@ public class HttpRequest {
 
     public String getCookie(String cookieName) {
         return this.cookies.get(cookieName);
+    }
+
+    public HttpSession getSession() {
+        return HttpSessionRepository.getSession(getCookie("JSESSIONID"));
     }
 }
