@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.UUID;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -25,6 +26,10 @@ public class RequestHandler extends Thread {
             final HttpRequest httpRequest = HttpRequest.of(in);
             final HttpResponse httpResponse = HttpResponse.of(out, "./webapp");
 
+            if (getSessionId(httpRequest) == null) {
+                httpResponse.addHeader("Set-Cookie", "JSESSIONID=" + UUID.randomUUID());
+            }
+
             final Controller controller = RequestMapping.findController(httpRequest.getPath());
 
             if (controller == null) {
@@ -35,6 +40,10 @@ public class RequestHandler extends Thread {
         } catch (IOException e) {
             log.error(e.getMessage());
         }
+    }
+
+    private String getSessionId(HttpRequest httpRequest) {
+        return httpRequest.getCookie("JSESSIONID");
     }
 
     private String getDefaultPath(String path) {

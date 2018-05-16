@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import webserver.HttpRequest;
 import webserver.HttpResponse;
+import webserver.session.HttpSession;
 
 import java.util.Optional;
 
@@ -24,11 +25,11 @@ public class LoginController extends AbstractController {
 
         if (loginSuccess) {
             log.debug("login success");
-            httpResponse.addHeader("Set-Cookie", "login=true");
+            HttpSession session = httpRequest.getSession();
+            session.setAttribute("user", user);
             httpResponse.sendRedirect("/index.html");
         } else {
             log.debug("login failed");
-            httpResponse.addHeader("Set-Cookie", "login=false");
             httpResponse.sendRedirect("/user/login_failed.html");
         }
     }

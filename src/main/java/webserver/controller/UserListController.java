@@ -32,8 +32,8 @@ public class UserListController extends AbstractController {
     }
 
     private Boolean isLogin(HttpRequest httpRequest) {
-        return Optional.ofNullable(httpRequest.getCookie("login"))
-                .map(Boolean::parseBoolean)
-                .orElse(Boolean.FALSE);
+        return Optional.ofNullable(httpRequest.getSession())
+                .map(session -> session.getAttribute("user"))
+                .isPresent();
     }
 }
